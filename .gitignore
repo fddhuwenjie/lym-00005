@@ -1,0 +1,14 @@
+python/
+python-embed.zip
+get-pip.py
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+test_results.txt
+test_output.txt
+*.db
+*.db-shm
+*.db-wal
+node_modules/

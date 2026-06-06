@@ -1,0 +1,32 @@
+{
+    "scenario": {
+        "name": "测试场景",
+        "num_doctors": 5,
+        "resuscitation_room_capacity": 8,
+        "simulation_duration": 480.0,
+        "arrival_rate": 0.5,
+        "esi_distribution": {
+            "ESI_1": 0.03,
+            "ESI_2": 0.08,
+            "ESI_3": 0.25,
+            "ESI_4": 0.35,
+            "ESI_5": 0.29
+        },
+        "service_time_params": {
+            "ESI_1": {"distribution_type": "gamma", "mean": 45.0, "std": 20.0},
+            "ESI_2": {"distribution_type": "gamma", "mean": 30.0, "std": 12.0},
+            "ESI_3": {"distribution_type": "gamma", "mean": 20.0, "std": 8.0},
+            "ESI_4": {"distribution_type": "gamma", "mean": 12.0, "std": 5.0},
+            "ESI_5": {"distribution_type": "gamma", "mean": 8.0, "std": 3.0}
+        },
+        "target_wait_time": {
+            "ESI_1": 1.0,
+            "ESI_2": 10.0,
+            "ESI_3": 30.0,
+            "ESI_4": 60.0,
+            "ESI_5": 120.0
+        }
+    },
+    "n": 1000,
+    "base_seed": 42
+}
