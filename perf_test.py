@@ -97,6 +97,21 @@ def _run_sim_core(scenario: Dict, seed: int) -> Dict:
         while wait_q:
             prio, at, pat_id = wait_q[0]
             pat = patients[pat_id]
+            pat_prio = ESI_PRIORITY[pat["esi_level"]]
+            
+            has_bed = resus_occ < resus_cap
+            bed_preempt_doc = -1
+            
+            if not has_bed:
+                if pat_prio == 1:
+                    lowest_prio = 999
+                    for d in range(num_docs):
+                        if doc_busy[d] is not None:
+                            op = patients[doc_busy[d]]
+                            op_prio = ESI_PRIORITY[op["esi_level"]]
+                            if op_prio > 1 and op_prio < lowest_prio:
+                                lowest_prio = op_prio
+                                bed_preempt_doc = d
             
             free_doc = -1
             for d in range(num_docs):
@@ -104,10 +119,9 @@ def _run_sim_core(scenario: Dict, seed: int) -> Dict:
                     free_doc = d
                     break
             
+            doc_preempt = -1
             if free_doc == -1:
-                pat_prio = ESI_PRIORITY[pat["esi_level"]]
                 lowest_prio = 999
-                doc_preempt = -1
                 for d in range(num_docs):
                     if doc_busy[d] is not None:
                         op = patients[doc_busy[d]]
@@ -115,32 +129,38 @@ def _run_sim_core(scenario: Dict, seed: int) -> Dict:
                         if op_prio > pat_prio and op_prio < lowest_prio:
                             lowest_prio = op_prio
                             doc_preempt = d
-                
-                if doc_preempt >= 0:
-                    op_id = doc_busy[doc_preempt]
-                    op = patients[op_id]
-                    elapsed = ct - doc_busy_start[doc_preempt]
-                    total = op["total_service_time"]
-                    remaining = max(0.1, total - elapsed)
-                    
-                    op["remaining"] = remaining
-                    op["service_start"] = None
-                    op["service_end"] = None
-                    op["preempted"] = True
-                    op["preempt_count"] += 1
-                    op["completed"] = False
-                    
-                    doc_total[doc_preempt] += elapsed
-                    doc_busy[doc_preempt] = None
-                    
-                    heapq.heappush(wait_q, (
-                        ESI_PRIORITY[op["esi_level"]],
-                        op["arrival_time"],
-                        op_id
-                    ))
-                    free_doc = doc_preempt
             
-            if free_doc >= 0:
+            if bed_preempt_doc >= 0:
+                doc_preempt = bed_preempt_doc
+                free_doc = doc_preempt
+                has_bed = True
+            
+            if doc_preempt >= 0:
+                op_id = doc_busy[doc_preempt]
+                op = patients[op_id]
+                elapsed = ct - doc_busy_start[doc_preempt]
+                total = op["total_service_time"]
+                remaining = max(0.1, total - elapsed)
+                
+                op["remaining"] = remaining
+                op["service_start"] = None
+                op["service_end"] = None
+                op["preempted"] = True
+                op["preempt_count"] += 1
+                op["completed"] = False
+                
+                doc_total[doc_preempt] += elapsed
+                doc_busy[doc_preempt] = None
+                resus_occ -= 1
+                
+                heapq.heappush(wait_q, (
+                    ESI_PRIORITY[op["esi_level"]],
+                    op["arrival_time"],
+                    op_id
+                ))
+                free_doc = doc_preempt
+            
+            if free_doc >= 0 and has_bed:
                 heapq.heappop(wait_q)
                 if pat["remaining"] is not None:
                     st = pat["remaining"]
